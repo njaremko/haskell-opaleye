@@ -386,38 +386,12 @@ apply (ArbitrarySelectArr q1) (ArbitrarySelectArr q2) =
 
   where pair x y = Choices [Right (pure x), Right (pure y)]
 
-
--- When combining arbitrary queries with the applicative product <*>
--- the limit of the denotation is not always the denotation of the
--- limit.  Without some ordering applied before the limit the returned
--- rows can vary.  If an ordering is applied beforehand we can check
--- the invariant that the returned rows always compare smaller than
--- the remainder under the applied ordering.
---
--- Strangely the same caveat doesn't apply to offset.
 limit :: ArbitraryPositiveInt
       -> ArbitrarySelect
-      -> ArbitraryOrder
       -> Connection
       -> IO TQ.Property
-limit (ArbitraryPositiveInt l) (ArbitrarySelect q) o = do
-  let limited = O.limit l (O.orderBy (arbitraryOrder o) q)
-
-  unSelectDenotations (denotation limited) (denotation q) $ \limited' unlimited' -> do
-      let remainder = MultiSet.fromList unlimited'
-                      `MultiSet.difference`
-                      MultiSet.fromList limited'
-          maxChosen :: Maybe Haskells
-          maxChosen = maximumBy (arbitraryOrdering o) limited'
-          minRemain :: Maybe Haskells
-          minRemain = minimumBy (arbitraryOrdering o) (MultiSet.toList remainder)
-          cond :: Maybe Bool
-          cond = lteBy (arbitraryOrdering o) <$> maxChosen <*> minRemain
-          condBool :: Bool
-          condBool = Maybe.fromMaybe True cond
-
-      return ((length limited' === min l (length unlimited'))
-              .&&. condBool)
+limit (ArbitraryPositiveInt l) =
+  compareDenotationNoSort' (O.limit l) (take l)
 
 offset :: ArbitraryPositiveInt -> ArbitrarySelect -> Connection
        -> IO TQ.Property
@@ -558,7 +532,7 @@ run conn = do
   test2 fields
   test3 fmap'
   test3 apply
-  test3 limit
+  test2 limit
   test2 offset
   test2 order
   test1 distinct
