@@ -26,7 +26,6 @@ import           Control.Category (Category, (.), id)
 import           Control.Monad (when, guard)
 import qualified Data.Profunctor.Product.Default as D
 import qualified Data.List as List
-import qualified Data.MultiSet as MultiSet
 import qualified Data.Monoid as Monoid
 import qualified Data.Ord as Ord hiding (compare)
 import qualified Data.Set as Set
