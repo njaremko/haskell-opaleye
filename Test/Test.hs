@@ -11,6 +11,7 @@ import qualified Control.Applicative              as A
 import           Control.Arrow                    ((&&&), (***), (<<<), (>>>))
 import qualified Control.Arrow                    as Arr
 import qualified Data.Aeson                       as Json
+import           Data.ByteString                  (ByteString)
 import qualified Data.Function                    as F
 import qualified Data.List                        as L
 import           Data.Monoid                      ((<>))
@@ -1191,26 +1192,8 @@ testForUpdate = do
       testH (OL.forUpdate table1Q) (`shouldBe` table1data)
 
 
-main :: IO ()
-main = do
-  let envVarName = "POSTGRES_CONNSTRING"
-
-  connectStringEnvVar <- lookupEnv envVarName
-
-  connectStringDotEnv <- do vars <- Dotenv.parseFile ".env"
-                            return (lookup envVarName vars)
-                         `Dotenv.onMissingFile`
-                         return Nothing
-
-  let mconnectString = connectStringEnvVar <|> connectStringDotEnv
-
-  connectString <- maybe
-    (fail ("Set " ++ envVarName ++ " environment variable\n"
-           ++ "For example " ++ envVarName ++ "='user=tom dbname=opaleye_test "
-           ++ "host=localhost port=25433 password=tom'"))
-    (pure . String.fromString)
-    mconnectString
-
+mainWithConnectString :: ByteString -> IO ()
+mainWithConnectString connectString = do
   conn <- PGS.connectPostgreSQL connectString
 
   dropAndCreateDB conn
@@ -1339,3 +1322,25 @@ main = do
         testMaybeFieldsDistinct
       describe "Locking" $ do
         testForUpdate
+
+main :: IO ()
+main = do
+  let envVarName = "POSTGRES_CONNSTRING"
+
+  connectStringEnvVar <- lookupEnv envVarName
+
+  connectStringDotEnv <- do vars <- Dotenv.parseFile ".env"
+                            return (lookup envVarName vars)
+                         `Dotenv.onMissingFile`
+                         return Nothing
+
+  let mconnectString = connectStringEnvVar <|> connectStringDotEnv
+
+  connectString <- maybe
+    (fail ("Set " ++ envVarName ++ " environment variable\n"
+           ++ "For example " ++ envVarName ++ "='user=tom dbname=opaleye_test "
+           ++ "host=localhost port=25433 password=tom'"))
+    (pure . String.fromString)
+    mconnectString
+
+  mainWithConnectString connectString
