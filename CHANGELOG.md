@@ -1,3 +1,6 @@
+* Added `Opaleye.Operators.array_position` and
+  `Opaleye.Operators.sqlElem`
+
 ## 0.7.1.0
 
 * Added `Opaleye.Experimental.Enum` for an easy way to deal with

@@ -329,6 +329,21 @@ singletonArray x = arrayPrepend x emptyArray
 index :: (C.SqlIntegral n) => Column (T.SqlArray a) -> Column n -> Column (C.Nullable a)
 index (Column a) (Column b) = Column (HPQ.ArrayIndex a b)
 
+-- | Postgres's @array_position@
+arrayPosition :: F.Field (T.SqlArray a) -- ^ Haystack
+              -> F.Field a -- ^ Needle
+              -> F.Field (Column.Nullable T.SqlInt4)
+arrayPosition (Column fs) (Column f') =
+  C.Column (HPQ.FunExpr "array_position" [fs , f'])
+
+-- | Whether the element (needle) exists in the array (haystack).
+-- N.B. this is implemented hackily using @array_position@.  If you
+-- need it to be implemented using @= any@ then please open an issue.
+sqlElem :: F.Field a -- ^ Needle
+        -> F.Field (T.SqlArray a) -- ^ Haystack
+        -> F.Field T.SqlBool
+sqlElem f fs = (O.not . F.isNull . arrayPosition fs) f
+
 -- * Range operators
 
 overlap :: Column (T.SqlRange a) -> Column (T.SqlRange a) -> F.Field T.SqlBool
